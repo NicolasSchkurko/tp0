@@ -1,9 +1,10 @@
 #include "client.h"
+#define SIEMPRE true
+
 
 int main(void)
 {
 	/*---------------------------------------------------PARTE 2-------------------------------------------------------------*/
-
 	int conexion;
 	char* ip;
 	char* puerto;
@@ -15,7 +16,7 @@ int main(void)
 	/* ---------------- LOGGING ---------------- */
 
 	logger = iniciar_logger();
-
+	log_info(logger, "Hola! Soy un log");	
 	// Usando el logger creado previamente
 	// Escribi: "Hola! Soy un log"
 
@@ -23,12 +24,14 @@ int main(void)
 	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
 
 	config = iniciar_config();
-
+	ip = config_get_string_value(config,"IP");
+	puerto = config_get_string_value(config,"PUERTO");
+	valor = config_get_string_value(config,"CLAVE");
 	// Usando el config creado previamente, leemos los valores del config y los 
 	// dejamos en las variables 'ip', 'puerto' y 'valor'
 
 	// Loggeamos el valor de config
-
+	log_info (logger, "Valor leido: %s", valor);
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
@@ -53,15 +56,27 @@ int main(void)
 }
 
 t_log* iniciar_logger(void)
-{
-	t_log* nuevo_logger;
+{	
+	t_log* nuevo_logger = log_create("clientLog.log", "Logger_Cliente",1,LOG_LEVEL_INFO);	
+	
+	if(nuevo_logger == NULL){
+		error_show("No se pudo crear el log");
+    	abort();
+	}
+
+	
 
 	return nuevo_logger;
 }
 
 t_config* iniciar_config(void)
 {
-	t_config* nuevo_config;
+	t_config* nuevo_config = config_create ("cliente.config");
+
+	if(nuevo_config == NULL){
+		error_show("No se pudo crear el config");
+    	abort();
+	}
 
 	return nuevo_config;
 }
@@ -69,14 +84,39 @@ t_config* iniciar_config(void)
 void leer_consola(t_log* logger)
 {
 	char* leido;
-
+	log_info (logger, "Comenzando a leer consola");
 	// La primera te la dejo de yapa
 	leido = readline("> ");
 
+	if(strcmp(leido,"")==0) log_info (logger, "Dejando de leer");
+	else log_info (logger, "Valor leido en consola: %s", leido);
 	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
+	while (strcmp(leido,"")!=0)
+	{
+		free(leido);
+		leido = readline("> ");
+		if(strcmp(leido,"")==0) log_info (logger, "Dejando de leer");
+		
+		//Solo por curiosidad
+		else if (strcmp(leido,"no free test")==0) //BUSCAR
+		{
+			printf("1"); 
+			leido = readline("> ");
+			printf("2");
+			leido = readline("> ");
+			printf("3");
+			leido = readline("> ");
+			log_info (logger, "Asi queda: %s", leido);
+		}
+		
+		else log_info (logger, "Valor leido en consola: %s", leido);
 
+
+	}
+	
 
 	// ¡No te olvides de liberar las lineas antes de regresar!
+	free(leido);
 
 }
 
@@ -95,6 +135,6 @@ void paquete(int conexion)
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
 {
-	/* Y por ultimo, hay que liberar lo que utilizamos (conexion, log y config) 
-	  con las funciones de las commons y del TP mencionadas en el enunciado */
+	log_destroy(logger);
+	config_destroy(config);
 }
